@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DHub</string>
+    <string name="app_sub">Roblox Auto-Revival</string>
+    <string name="dashboard">Dashboard</string>
+    <string name="settings">Settings</string>
+    <string name="start">START</string>
+    <string name="stop">STOP</string>
+    <string name="clear">Clear</string>
+    <string name="no_activity">Belum ada aktivitas</string>
+    <string name="channel_name">DHub Monitor</string>
+    <string name="channel_desc">Monitoring Roblox profiles</string>
+    <string name="notif_title">DHub aktif</string>
+    <string name="notif_text">Memantau %d profil Roblox</string>
+</resources>

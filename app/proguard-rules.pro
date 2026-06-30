@@ -1,0 +1,2 @@
+-keep class com.dhub.** { *; }
+-keep class com.google.gson.** { *; }

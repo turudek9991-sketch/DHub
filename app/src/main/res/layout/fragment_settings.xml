@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_main">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- PACKAGES CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_card">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="ROBLOX PACKAGES" style="@style/SectionLabel" />
+
+            <Button
+                android:id="@+id/btn_auto_detect"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:text="🔍 Auto-detect package"
+                android:textColor="@color/accent"
+                android:textSize="13sp"
+                android:background="@drawable/bg_button_secondary"
+                android:paddingHorizontal="14dp"
+                android:stateListAnimator="@null"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/txt_detected_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 package terdeteksi"
+                android:textColor="@color/accent"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Profile list (dynamic) -->
+            <LinearLayout
+                android:id="@+id/profiles_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <!-- Add package row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp">
+
+                <EditText
+                    android:id="@+id/input_new_package"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:hint="Package name baru..."
+                    android:background="@drawable/bg_input"
+                    android:textColor="@color/text_white"
+                    android:textColorHint="@color/text_dim"
+                    android:textSize="13sp"
+                    android:padding="10dp"
+                    android:inputType="text"
+                    android:imeOptions="actionDone" />
+
+                <Button
+                    android:id="@+id/btn_add_package"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:text="+"
+                    android:textColor="@color/white"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_button_primary"
+                    android:layout_marginStart="8dp"
+                    android:stateListAnimator="@null" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Link Default / VIP"
+                android:textColor="@color/text_muted"
+                android:textSize="11sp"
+                android:layout_marginTop="14dp" />
+
+            <EditText
+                android:id="@+id/input_default_link"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:hint="roblox://placeID=..."
+                android:background="@drawable/bg_input"
+                android:textColor="@color/text_white"
+                android:textColorHint="@color/text_dim"
+                android:textSize="13sp"
+                android:padding="10dp"
+                android:inputType="textUri"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- RECOVERY CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_card">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="RECOVERY" style="@style/SectionLabel" />
+
+            <include layout="@layout/item_setting_row"
+                android:id="@+id/row_force_close" />
+            <include layout="@layout/item_setting_row"
+                android:id="@+id/row_detect_ingame" />
+            <include layout="@layout/item_setting_row"
+                android:id="@+id/row_detect_error" />
+            <include layout="@layout/item_setting_row"
+                android:id="@+id/row_verify_join" />
+        </LinearLayout>
+
+        <!-- PERFORMANCE CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_card">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="PERFORMANCE" style="@style/SectionLabel" />
+
+            <include layout="@layout/item_setting_row" android:id="@+id/row_mode_performa" />
+            <include layout="@layout/item_setting_row" android:id="@+id/row_bersihkan_cache" />
+            <include layout="@layout/item_setting_row" android:id="@+id/row_bebaskan_memori" />
+            <include layout="@layout/item_setting_row" android:id="@+id/row_tutup_aplikasi" />
+        </LinearLayout>
+
+        <!-- ADVANCED CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_card">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="ADVANCED" style="@style/SectionLabel" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Jeda cek (detik)" android:textColor="@color/text_muted" android:textSize="11sp" />
+            <EditText android:id="@+id/input_jeda_cek"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="10" android:inputType="number"
+                android:background="@drawable/bg_input" android:textColor="@color/text_white"
+                android:padding="10dp" android:textSize="13sp" android:layout_marginTop="6dp" android:layout_marginBottom="10dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Jeda sebelum restart (detik)" android:textColor="@color/text_muted" android:textSize="11sp" />
+            <EditText android:id="@+id/input_jeda_restart"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="5" android:inputType="number"
+                android:background="@drawable/bg_input" android:textColor="@color/text_white"
+                android:padding="10dp" android:textSize="13sp" android:layout_marginTop="6dp" android:layout_marginBottom="10dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Delay deteksi keluar game (detik)" android:textColor="@color/text_muted" android:textSize="11sp" />
+            <EditText android:id="@+id/input_delay_deteksi"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="45" android:inputType="number"
+                android:background="@drawable/bg_input" android:textColor="@color/text_white"
+                android:padding="10dp" android:textSize="13sp" android:layout_marginTop="6dp" android:layout_marginBottom="10dp" />
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Jeda antar profil (detik)" android:textColor="@color/text_muted" android:textSize="11sp" />
+            <EditText android:id="@+id/input_jeda_profil"
+                android:layout_width="match_parent" android:layout_height="44dp"
+                android:text="3" android:inputType="number"
+                android:background="@drawable/bg_input" android:textColor="@color/text_white"
+                android:padding="10dp" android:textSize="13sp" android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- DISCORD CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="14dp"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/bg_card">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="DISCORD" style="@style/SectionLabel" />
+
+            <include layout="@layout/item_setting_row" android:id="@+id/row_discord_notif" />
+
+            <EditText
+                android:id="@+id/input_webhook_url"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:hint="https://discord.com/api/webhooks/..."
+                android:background="@drawable/bg_input"
+                android:textColor="@color/text_white"
+                android:textColorHint="@color/text_dim"
+                android:textSize="13sp"
+                android:padding="10dp"
+                android:inputType="textUri"
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Reset button -->
+        <Button
+            android:id="@+id/btn_reset"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="Reset ke default"
+            android:textColor="@color/red"
+            android:textStyle="bold"
+            android:background="@drawable/bg_button_secondary_red"
+            android:stateListAnimator="@null"
+            android:layout_marginBottom="8dp" />
+
+    </LinearLayout>
+</ScrollView>
