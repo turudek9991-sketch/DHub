@@ -1,121 +1,90 @@
 package com.dhub;
 
-import android.database.sqlite.SQLiteDatabase;
-import android.content.ContentValues;
-import java.io.File;
 import java.io.DataOutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.File;
 
 public class RootCookieInjector {
 
     public static boolean injectCookie(String packageName, String cookieValue) {
-        String cookieDbPath = "/data/data/" + packageName + "/app_webview/Default/Cookies";
-        // Alternatif lokasi jika path di atas gagal
-        String altCookieDbPath = "/data/data/" + packageName + "/app_webview/Cookies";
+        Process process = null;
+        DataOutputStream os = null;
 
         try {
-            // 1. Force stop aplikasi target agar DB dilepas oleh Roblox
-            execRootCommand("am force-stop " + packageName);
-            Thread.sleep(500);
+            // 1. Tentukan path database cookies Roblox
+            String cookieDbPath = "/data/data/" + packageName + "/app_webview/Default/Cookies";
+            String altDbPath = "/data/data/" + packageName + "/app_webview/Cookies";
 
-            // Cek lokasi database yang valid
-            String targetPath = cookieDbPath;
-            String check = execRootCommandWithOutput("ls " + cookieDbPath);
-            if (check == null || check.contains("No such file")) {
-                targetPath = altCookieDbPath;
-            }
+            // 2. Bersihkan karakter string cookie agar aman di shell
+            String escapedCookie = cookieValue.replace("'", "''");
+            long creationMicros = System.currentTimeMillis() * 1000;
+            long expiryMicros = creationMicros + (365L * 24 * 60 * 60 * 1000 * 1000);
 
-            // 2. LONGGARIN PERMISSION VIA ROOT (Agar Java internal DHub bisa baca-tulis file data Roblox)
-            // Kita beri akses membaca ke direktori dan file database secara temporal
-            execRootCommand("chmod 777 /data/data/" + packageName);
-            execRootCommand("chmod 777 /data/data/" + packageName + "/app_webview");
-            execRootCommand("chmod -R 777 " + new File(targetPath).getParent());
-            execRootCommand("chmod 666 " + targetPath);
+            // SQL Statement untuk menghapus dan memasukkan cookie baru
+            String sql = "DELETE FROM cookies WHERE name='.ROBLOSECURITY'; " +
+                         "INSERT OR REPLACE INTO cookies (creation_utc, host_key, name, value, path, expires_utc, is_secure, is_httponly, last_access_utc, has_expires, is_persistent, priority, samesite, source_scheme, source_port) " +
+                         "VALUES (" + creationMicros + ", '.roblox.com', '.ROBLOSECURITY', '" + escapedCookie + "', '/', " + expiryMicros + ", 1, 1, " + creationMicros + ", 1, 1, 1, -1, 2, 443);";
 
-            // 3. MANIPULASI DATABASE MENGGUNAKAN SQLITE JAVA (Lebih aman dari ketergantungan binary sistem)
-            File dbFile = new File(targetPath);
-            if (!dbFile.exists()) {
-                return false; 
-            }
+            // 3. TRIK ANDROID 10: Buat script shell independen di folder /data/local/tmp/
+            // Ini agar eksekusi terlepas dari Sandbox aplikasi DHub
+            process = Runtime.getRuntime().exec("su");
+            os = new DataOutputStream(process.getOutputStream());
 
-            // Buka database secara langsung menggunakan library bawaan framework Android
-            SQLiteDatabase db = SQLiteDatabase.openDatabase(dbFile.getAbsolutePath(), null, SQLiteDatabase.OPEN_READWRITE);
+            // Tulis script otomatis langsung dari kodingan Java
+            os.writeBytes("cat << 'EOF' > /data/local/tmp/inject.sh\n");
+            os.writeBytes("#!/system/bin/sh\n");
+            os.writeBytes("setenforce 0\n"); // Matikan SELinux Android 10 sementara
+            os.writeBytes("am force-stop " + packageName + "\n");
             
-            // Hapus cookie lama
-            db.delete("cookies", "name = ?", new String[]{".ROBLOSECURITY"});
+            // Logika pemilihan path database di dalam shell murni
+            os.writeBytes("DB_PATH=\"" + cookieDbPath + "\"\n");
+            os.writeBytes("[ ! -f \"$DB_PATH\" ] && DB_PATH=\"" + altDbPath + "\"\n");
+            
+            // Eksekusi penulisan database via sqlite3 bawaan Redfinger
+            os.writeBytes("sqlite3 \"$DB_PATH\" \"" + sql + "\"\n");
+            
+            // Kembalikan permission dan kepemilikan user ID Roblox (Wajib di Android 10)
+            os.writeBytes("chmod 660 \"$DB_PATH\"\n");
+            os.writeBytes("chown $(stat -c '%u:%g' /data/data/" + packageName + ") \"$DB_PATH\"\n");
+            os.writeBytes("setenforce 1\n"); // Hidupkan SELinux kembali
+            os.writeBytes("EOF\n");
+            os.flush();
 
-            // Siapkan data baru (Android ContentValues secara otomatis mengamankan query dari broken strings)
-            long currentMicros = System.currentTimeMillis() * 1000;
-            long expiryMicros = currentMicros + (365L * 24 * 60 * 60 * 1000 * 1000);
+            // 4. JALANKAN SCRIPT SEBAGAI ROOT MURNI
+            os.writeBytes("chmod +x /data/local/tmp/inject.sh\n");
+            os.writeBytes("/data/local/tmp/inject.sh\n");
+            
+            // 5. Bersihkan kembali sisa script agar tidak menumpuk di memori
+            os.writeBytes("rm /data/local/tmp/inject.sh\n");
+            os.writeBytes("exit\n");
+            os.flush();
 
-            ContentValues values = new ContentValues();
-            values.put("creation_utc", currentMicros);
-            values.put("host_key", ".roblox.com");
-            values.put("name", ".ROBLOSECURITY");
-            values.put("value", cookieValue);
-            values.put("path", "/");
-            values.put("expires_utc", expiryMicros);
-            values.put("is_secure", 1);
-            values.put("is_httponly", 1);
-            values.put("last_access_utc", currentMicros);
-            values.put("has_expires", 1);
-            values.put("is_persistent", 1);
-            values.put("priority", 1);
-            values.put("samesite", -1);
-            values.put("source_scheme", 2);
-            values.put("source_port", 443);
-
-            long result = db.insert("cookies", null, values);
-            db.close();
-
-            // 4. KEMBALIKAN PERMISSION ASLI ROBLOX (Sangat krusial agar Roblox tidak crash saat dibuka)
-            execRootCommand("chmod 751 /data/data/" + packageName);
-            execRootCommand("chmod -R 700 /data/data/" + packageName + "/app_webview");
-            execRootCommand("chmod 660 " + targetPath);
-            // Kembalikan kepemilikan user ID bawaan aplikasi aslinya
-            execRootCommand("chown -R $(stat -c '%u:%g' /data/data/" + packageName + ") /data/data/" + packageName);
-
-            return result != -1;
+            int exitVal = process.waitFor();
+            
+            // Jika exitVal adalah 0, shell sukses mengeksekusi script secara independen!
+            return exitVal == 0;
 
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        } finally {
+            try {
+                if (os != null) os.close();
+                if (process != null) process.destroy();
+            } catch (Exception ignored) {}
         }
     }
 
-    private static boolean execRootCommand(String command) {
+    public static boolean isRootAvailable() {
         try {
             Process process = Runtime.getRuntime().exec("su");
             DataOutputStream os = new DataOutputStream(process.getOutputStream());
-            os.writeBytes(command + "\n");
+            os.writeBytes("id\n");
             os.writeBytes("exit\n");
             os.flush();
-            int result = process.waitFor();
-            return result == 0;
+            int exitVal = process.waitFor();
+            return exitVal == 0;
         } catch (Exception e) {
             return false;
-        }
-    }
-
-    private static String execRootCommandWithOutput(String command) {
-        try {
-            Process process = Runtime.getRuntime().exec("su");
-            DataOutputStream os = new DataOutputStream(process.getOutputStream());
-            os.writeBytes(command + "\n");
-            os.writeBytes("exit\n");
-            os.flush();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            StringBuilder output = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                output.append(line).append("\n");
-            }
-            process.waitFor();
-            return output.toString();
-        } catch (Exception e) {
-            return null;
         }
     }
 }
