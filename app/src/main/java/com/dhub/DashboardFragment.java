@@ -100,10 +100,14 @@ public class DashboardFragment extends Fragment {
         super.onResume();
         profiles = prefs.loadProfiles();
         
-        // Pemulihan Log dari Prefs
+        // Pemulihan Log dari Prefs dengan Pengecekan Versi SDK Android yang Aman
         String savedLogs = prefs.loadLogs();
         if (!savedLogs.isEmpty()) {
-            logBuilder = new SpannableStringBuilder(Html.fromHtml(savedLogs, Html.FROM_HTML_MODE_LEGACY));
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                logBuilder = new SpannableStringBuilder(Html.fromHtml(savedLogs, Html.FROM_HTML_MODE_LEGACY));
+            } else {
+                logBuilder = new SpannableStringBuilder(Html.fromHtml(savedLogs));
+            }
             logText.setText(logBuilder);
             logText.setPadding(0, 0, 0, 0);
             logText.setGravity(android.view.Gravity.START);
@@ -310,8 +314,12 @@ public class DashboardFragment extends Fragment {
 
             logText.setText(logBuilder);
             
-            // Simpan Log Terenkode HTML ke Prefs
-            prefs.saveLogs(Html.toHtml(logBuilder, Html.TO_HTML_MODE_LEGACY));
+            // Simpan Log Terenkode HTML ke Prefs secara dinamis mengikuti SDK perangkat
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
+                prefs.saveLogs(Html.toHtml(logBuilder, Html.TO_HTML_MODE_LEGACY));
+            } else {
+                prefs.saveLogs(Html.toHtml(logBuilder));
+            }
             
             logScroll.post(() -> logScroll.fullScroll(View.FOCUS_DOWN));
         });
