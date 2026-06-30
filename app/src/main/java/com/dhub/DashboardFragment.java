@@ -144,9 +144,20 @@ public class DashboardFragment extends Fragment {
                     appendLog("Membuka " + p.packageName + "...", "default");
                 });
 
-                // Inject cookie
+                // Inject cookie (otomatis force-stop dulu sebelum inject)
                 if (!p.cookie.isEmpty()) {
-                    RobloxHelper.injectCookie(p.cookie);
+                    new Handler(Looper.getMainLooper()).post(() ->
+                        appendLog("Injecting cookie: " + p.packageName + "...", "default"));
+                    boolean cookieOk = RobloxHelper.injectCookie(p.packageName, p.cookie);
+                    final boolean fCookieOk = cookieOk;
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        if (fCookieOk) {
+                            appendLog("✓ Cookie injected: " + p.packageName, "green");
+                        } else {
+                            appendLog("✗ Cookie gagal (cek akses root): " + p.packageName, "red");
+                        }
+                    });
+                    try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
                 }
 
                 // Launch

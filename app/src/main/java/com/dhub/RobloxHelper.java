@@ -29,23 +29,17 @@ public class RobloxHelper {
     }
 
     /**
-     * Inject cookie .ROBLOSECURITY ke WebView storage
-     * Ini yang membuat Roblox auto-login tanpa perlu input manual
+     * Inject cookie .ROBLOSECURITY langsung ke database WebView Roblox app
+     * via akses root. Ini diperlukan karena CookieManager biasa tidak bisa
+     * menembus sandboxing antar-package di Android.
+     *
+     * @param packageName package Roblox target (mis: com.roblox.cliena)
+     * @param cookie      nilai cookie .ROBLOSECURITY
+     * @return true kalau berhasil
      */
-    public static void injectCookie(String cookie) {
-        if (cookie == null || cookie.trim().isEmpty()) return;
-        try {
-            CookieManager cm = CookieManager.getInstance();
-            cm.setAcceptCookie(true);
-            String cookieStr = ".ROBLOSECURITY=" + cookie.trim();
-            // Set ke semua domain Roblox
-            cm.setCookie("https://www.roblox.com", cookieStr);
-            cm.setCookie("https://roblox.com", cookieStr);
-            cm.setCookie("https://auth.roblox.com", cookieStr);
-            cm.flush();
-        } catch (Exception e) {
-            // Ignore cookie errors
-        }
+    public static boolean injectCookie(String packageName, String cookie) {
+        if (cookie == null || cookie.trim().isEmpty()) return false;
+        return RootCookieInjector.injectCookie(packageName, cookie.trim());
     }
 
     /**

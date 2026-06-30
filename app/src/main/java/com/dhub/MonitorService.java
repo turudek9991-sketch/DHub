@@ -109,7 +109,8 @@ public class MonitorService extends Service {
 
             // Inject cookie
             if (!profile.cookie.isEmpty()) {
-                RobloxHelper.injectCookie(profile.cookie);
+                RobloxHelper.injectCookie(profile.packageName, profile.cookie);
+                Thread.sleep(1500);
             }
 
             // Launch
