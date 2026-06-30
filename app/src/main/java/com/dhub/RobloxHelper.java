@@ -39,36 +39,36 @@ public class RobloxHelper {
     }
 
     /**
-     * PERBAIKAN MUTLAK REDFINGER: Meniru metode peluncuran bersih "Info Aplikasi -> Buka"
-     * Menghilangkan flag windowing eksperimental yang memicu crash grafis di Android 10 Cloud Phone
+     * PERBAIKAN FINAL LAUNCH: Memperbaiki intent agar aplikasi bisa terbuka kembali secara resmi
+     * Menghilangkan konflik penulisan flag action/category yang merusak intent utama
      */
     public static boolean launchRoblox(Context context, String packageName, String link) {
         try {
             Intent intent = null;
 
             if (link != null && !link.trim().isEmpty()) {
-                // Jika ada link game, gunakan pemanggilan Deep Link VIEW standar yang bersih
+                // Jika ada link game, jalankan Deep Link standar yang bersih
                 intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.trim()));
                 intent.setPackage(packageName);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             } else {
-                // MENIRU SISTEM "INFO APLIKASI -> BUKA": Panggil Main Activity secara Eksplisit
+                // Ambil intent peluncur resmi bawaan sistem paket Android
                 PackageManager pm = context.getPackageManager();
                 intent = pm.getLaunchIntentForPackage(packageName);
                 
                 if (intent == null) {
-                    // Fallback alternatif jika sistem launcher gagal mengambil intent utama
+                    // Taktik Fallback: Jika sistem gagal, tembak langsung Component Activity Roblox secara eksplisit
                     intent = new Intent(Intent.ACTION_MAIN);
                     intent.addCategory(Intent.CATEGORY_LAUNCHER);
                     intent.setComponent(new ComponentName(packageName, "com.roblox.client.Activity"));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                } else {
+                    // Jika intent resmi ditemukan, cukup tambahkan flag task baru agar stabil
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 }
             }
 
-            // Gunakan flag bawaan sistem Android Launcher yang bersih dan stabil
-            intent.setAction(Intent.ACTION_MAIN);
-            intent.addCategory(Intent.CATEGORY_LAUNCHER);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
-
+            // Eksekusi pemanggilan aktivitas ke sistem Android
             context.startActivity(intent);
             return true;
         } catch (Exception e) {
