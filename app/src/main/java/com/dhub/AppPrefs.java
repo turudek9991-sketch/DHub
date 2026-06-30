@@ -26,12 +26,26 @@ public class AppPrefs {
     private static final String KEY_TUTUP_APLIKASI = "tutup_aplikasi";
     private static final String KEY_DISCORD_NOTIF = "discord_notif";
     private static final String KEY_WEBHOOK_URL = "webhook_url";
+    private static final String KEY_LOGS_CACHE = "logs_cache"; // Tambahan Key Log
 
     private final SharedPreferences prefs;
     private final Gson gson = new Gson();
 
     public AppPrefs(Context context) {
         prefs = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+    }
+
+    // ── Logs Persistence ──────────────────────────────────────────────────────
+    public void saveLogs(String logsText) {
+        prefs.edit().putString(KEY_LOGS_CACHE, logsText).apply();
+    }
+
+    public String loadLogs() {
+        return prefs.getString(KEY_LOGS_CACHE, "");
+    }
+
+    public void clearLogs() {
+        prefs.edit().remove(KEY_LOGS_CACHE).apply();
     }
 
     // ── Profiles ─────────────────────────────────────────────────────────────
