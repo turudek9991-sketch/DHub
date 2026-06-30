@@ -3,7 +3,7 @@
     <color name="bg_main">#0D0D14</color>
     <color name="bg_surface">#13131F</color>
     <color name="bg_card">#1A1A2E</color>
-    <color name="accent">#7C6FF7</color>
+    <color name="accent">#F44336</color>
     <color name="accent_dim">#5A54C4</color>
     <color name="text_white">#E8E8F0</color>
     <color name="text_muted">#7070A0</color>
