@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.webkit.CookieManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,8 +42,8 @@ public class RobloxHelper {
     }
 
     /**
-     * Launch aplikasi Roblox via deep link (placeID join)
-     * atau buka package langsung jika tidak ada link
+     * PERBAIKAN UTAMA: Launch aplikasi Roblox via deep link / paket utama dengan proteksi Floating Window
+     * Mencegah crash loading grafis pada Android 10 Redfinger / Emulator
      */
     public static boolean launchRoblox(Context context, String packageName, String link) {
         try {
@@ -59,7 +58,16 @@ public class RobloxHelper {
                 intent = pm.getLaunchIntentForPackage(packageName);
                 if (intent == null) return false;
             }
+            
+            // PERBAIKAN FLAG WINDOWING: Menggunakan arsitektur multi-tasking resmi Android 10
+            // Mencegah crash engine grafis saat inisialisasi loading game
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
+            
+            // Flag tambahan untuk mendukung kelancaran komparasi split/floating window di Android 10
+            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
+            
             context.startActivity(intent);
             return true;
         } catch (Exception e) {
