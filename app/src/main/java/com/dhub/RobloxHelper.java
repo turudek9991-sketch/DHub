@@ -1,6 +1,7 @@
 package com.dhub;
 
 import android.app.ActivityManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -31,10 +32,6 @@ public class RobloxHelper {
      * Inject cookie .ROBLOSECURITY langsung ke database WebView Roblox app
      * via akses root. Ini diperlukan karena CookieManager biasa tidak bisa
      * menembus sandboxing antar-package di Android.
-     *
-     * @param packageName package Roblox target (mis: com.roblox.cliena)
-     * @param cookie      nilai cookie .ROBLOSECURITY
-     * @return true kalau berhasil
      */
     public static boolean injectCookie(String packageName, String cookie) {
         if (cookie == null || cookie.trim().isEmpty()) return false;
@@ -42,35 +39,40 @@ public class RobloxHelper {
     }
 
     /**
-     * PERBAIKAN UTAMA: Launch aplikasi Roblox via deep link / paket utama dengan proteksi Floating Window
-     * Mencegah crash loading grafis pada Android 10 Redfinger / Emulator
+     * PERBAIKAN MUTLAK REDFINGER: Meniru metode peluncuran bersih "Info Aplikasi -> Buka"
+     * Menghilangkan flag windowing eksperimental yang memicu crash grafis di Android 10 Cloud Phone
      */
     public static boolean launchRoblox(Context context, String packageName, String link) {
         try {
-            Intent intent;
+            Intent intent = null;
+
             if (link != null && !link.trim().isEmpty()) {
-                // Launch dengan deep link join game
+                // Jika ada link game, gunakan pemanggilan Deep Link VIEW standar yang bersih
                 intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.trim()));
                 intent.setPackage(packageName);
             } else {
-                // Launch main activity package
+                // MENIRU SISTEM "INFO APLIKASI -> BUKA": Panggil Main Activity secara Eksplisit
                 PackageManager pm = context.getPackageManager();
                 intent = pm.getLaunchIntentForPackage(packageName);
-                if (intent == null) return false;
+                
+                if (intent == null) {
+                    // Fallback alternatif jika sistem launcher gagal mengambil intent utama
+                    intent = new Intent(Intent.ACTION_MAIN);
+                    intent.addCategory(Intent.CATEGORY_LAUNCHER);
+                    intent.setComponent(new ComponentName(packageName, "com.roblox.client.Activity"));
+                }
             }
-            
-            // PERBAIKAN FLAG WINDOWING: Menggunakan arsitektur multi-tasking resmi Android 10
-            // Mencegah crash engine grafis saat inisialisasi loading game
+
+            // Gunakan flag bawaan sistem Android Launcher yang bersih dan stabil
+            intent.setAction(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.addFlags(Intent.FLAG_ACTIVITY_MULTIPLE_TASK);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NO_USER_ACTION);
-            
-            // Flag tambahan untuk mendukung kelancaran komparasi split/floating window di Android 10
-            intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT);
-            
+            intent.addFlags(Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+
             context.startActivity(intent);
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
