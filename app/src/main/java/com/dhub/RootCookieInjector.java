@@ -84,7 +84,7 @@ public class RootCookieInjector {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
-        } finaly {
+        } finally { // <- Perbaikan penulisan kata kunci block (finally)
             try {
                 if (os != null) os.close();
                 if (process != null) process.destroy();
