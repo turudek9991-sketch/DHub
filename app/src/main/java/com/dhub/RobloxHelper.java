@@ -1,12 +1,12 @@
 package com.dhub;
 
 import android.app.ActivityManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.webkit.CookieManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,6 +32,10 @@ public class RobloxHelper {
      * Inject cookie .ROBLOSECURITY langsung ke database WebView Roblox app
      * via akses root. Ini diperlukan karena CookieManager biasa tidak bisa
      * menembus sandboxing antar-package di Android.
+     *
+     * @param packageName package Roblox target (mis: com.roblox.cliena)
+     * @param cookie      nilai cookie .ROBLOSECURITY
+     * @return true kalau berhasil
      */
     public static boolean injectCookie(String packageName, String cookie) {
         if (cookie == null || cookie.trim().isEmpty()) return false;
@@ -39,40 +43,26 @@ public class RobloxHelper {
     }
 
     /**
-     * PERBAIKAN FINAL LAUNCH: Memperbaiki intent agar aplikasi bisa terbuka kembali secara resmi
-     * Menghilangkan konflik penulisan flag action/category yang merusak intent utama
+     * Launch aplikasi Roblox via deep link (placeID join)
+     * atau buka package langsung jika tidak ada link
      */
     public static boolean launchRoblox(Context context, String packageName, String link) {
         try {
-            Intent intent = null;
-
+            Intent intent;
             if (link != null && !link.trim().isEmpty()) {
-                // Jika ada link game, jalankan Deep Link standar yang bersih
+                // Launch dengan deep link join game
                 intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.trim()));
                 intent.setPackage(packageName);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             } else {
-                // Ambil intent peluncur resmi bawaan sistem paket Android
+                // Launch main activity package
                 PackageManager pm = context.getPackageManager();
                 intent = pm.getLaunchIntentForPackage(packageName);
-                
-                if (intent == null) {
-                    // Taktik Fallback: Jika sistem gagal, tembak langsung Component Activity Roblox secara eksplisit
-                    intent = new Intent(Intent.ACTION_MAIN);
-                    intent.addCategory(Intent.CATEGORY_LAUNCHER);
-                    intent.setComponent(new ComponentName(packageName, "com.roblox.client.Activity"));
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                } else {
-                    // Jika intent resmi ditemukan, cukup tambahkan flag task baru agar stabil
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                }
+                if (intent == null) return false;
             }
-
-            // Eksekusi pemanggilan aktivitas ke sistem Android
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             context.startActivity(intent);
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
     }
