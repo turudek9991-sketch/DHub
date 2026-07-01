@@ -43,4 +43,5 @@ dependencies {
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'androidx.work:work-runtime:2.9.0'
     implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.xerial:sqlite-jdbc:3.43.0.0'
 }
