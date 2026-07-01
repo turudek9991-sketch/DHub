@@ -23,9 +23,6 @@ public class MonitorService extends Service {
     private static final String CHANNEL_ID = "dhub_monitor";
     private static final int NOTIF_ID = 1;
 
-    // Untuk melacak eksternal status service dari fragment
-    public static boolean isServiceRunning = false;
-
     private AppPrefs prefs;
     private List<ProfileModel> profiles;
     private Handler handler;
@@ -43,11 +40,10 @@ public class MonitorService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        isServiceRunning = true;
         profiles = prefs.loadProfiles();
         startForeground(NOTIF_ID, buildNotification());
         startMonitoring();
-        return START_STICKY; // Menjaga agar OS tidak membunuh paksa service ini
+        return START_STICKY;
     }
 
     @Override
@@ -56,13 +52,13 @@ public class MonitorService extends Service {
     @Override
     public void onDestroy() {
         running = false;
-        isServiceRunning = false;
         if (handler != null && monitorRunnable != null) {
             handler.removeCallbacks(monitorRunnable);
         }
         super.onDestroy();
     }
 
+    // ── Monitoring loop ───────────────────────────────────────────────────────
     private void startMonitoring() {
         running = true;
         int jedaCek = prefs.getJedaCek() * 1000;
@@ -79,7 +75,7 @@ public class MonitorService extends Service {
     }
 
     private void checkAllProfiles() {
-        profiles = prefs.loadProfiles();
+        profiles = prefs.loadProfiles(); // reload latest
         int activeCount = 0;
 
         for (ProfileModel profile : profiles) {
@@ -89,10 +85,13 @@ public class MonitorService extends Service {
             if (isAlive) {
                 activeCount++;
             } else {
+                // Detected crash/kick → rejoin
                 sendLog("⚠ " + profile.packageName + " tidak merespons, rejoining...", "yellow");
                 new Thread(() -> rejoin(profile)).start();
             }
         }
+
+        // Update notification
         updateNotification(activeCount);
     }
 
@@ -100,19 +99,21 @@ public class MonitorService extends Service {
         try {
             int jedaRestart = prefs.getJedaRestart() * 1000;
 
+            // Force close dulu kalau setting aktif
             if (prefs.getForceClose()) {
                 RobloxHelper.forceStop(this, profile.packageName);
+                Thread.sleep(2000);
+            }
+
+            Thread.sleep(jedaRestart);
+
+            // Inject cookie
+            if (!profile.cookie.isEmpty()) {
+                RobloxHelper.injectCookie(profile.packageName, profile.cookie);
                 Thread.sleep(1500);
             }
 
-            // PERBAIKAN URUTAN: Biarkan basis data benar-benar bebas sebelum diinjeksi ulang
-            Thread.sleep(jedaRestart);
-
-            if (!profile.cookie.isEmpty()) {
-                RobloxHelper.injectCookie(profile.packageName, profile.cookie);
-                Thread.sleep(2000); // Penambahan jeda penulisan disk Android 10
-            }
-
+            // Launch
             String link = !profile.link.isEmpty() ? profile.link : prefs.getDefaultLink();
             boolean success = RobloxHelper.launchRoblox(this, profile.packageName, link);
 
@@ -131,6 +132,7 @@ public class MonitorService extends Service {
         }
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
     private void sendLog(String msg, String type) {
         Intent intent = new Intent(ACTION_LOG);
         intent.putExtra(EXTRA_LOG_MSG, msg);
