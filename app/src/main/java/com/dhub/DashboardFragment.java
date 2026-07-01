@@ -150,7 +150,7 @@ public class DashboardFragment extends Fragment {
                         appendLog("Injecting cookie: " + p.packageName + "...", "default"));
                     boolean cookieOk = RobloxHelper.injectCookie(p.packageName, p.cookie);
                     final boolean fCookieOk = cookieOk;
-                    final String errorMsg = RootCookieInjector.lastError;
+                    final String errorMsg = SqliteCookieInjector.lastError;
                     new Handler(Looper.getMainLooper()).post(() -> {
                         if (fCookieOk) {
                             appendLog("✓ Cookie injected: " + p.packageName, "green");
