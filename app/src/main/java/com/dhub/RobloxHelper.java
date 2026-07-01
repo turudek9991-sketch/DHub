@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.webkit.CookieManager;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +29,9 @@ public class RobloxHelper {
 
     /**
      * Inject cookie .ROBLOSECURITY langsung ke database WebView Roblox app
-     * via akses root. Ini diperlukan karena CookieManager biasa tidak bisa
-     * menembus sandboxing antar-package di Android.
+     * via akses Java SQLite (tidak memerlukan binary sqlite3 di shell).
+     * Ini diperlukan karena CookieManager biasa tidak bisa menembus
+     * sandboxing antar-package di Android.
      *
      * @param packageName package Roblox target (mis: com.roblox.cliena)
      * @param cookie      nilai cookie .ROBLOSECURITY
@@ -39,7 +39,7 @@ public class RobloxHelper {
      */
     public static boolean injectCookie(String packageName, String cookie) {
         if (cookie == null || cookie.trim().isEmpty()) return false;
-        return RootCookieInjector.injectCookie(packageName, cookie.trim());
+        return SqliteCookieInjector.injectCookie(packageName, cookie.trim());
     }
 
     /**
