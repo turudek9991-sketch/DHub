@@ -86,7 +86,6 @@ public class DashboardFragment extends Fragment {
         btnStop.setOnClickListener(v -> handleStop());
         btnClearLog.setOnClickListener(v -> {
             logBuilder.clear();
-            prefs.clearLogs();
             logText.setText("Belum ada aktivitas");
             logText.setTextColor(Color.parseColor("#4A4A70"));
             logText.setGravity(android.view.Gravity.CENTER);
@@ -98,29 +97,7 @@ public class DashboardFragment extends Fragment {
     public void onResume() {
         super.onResume();
         profiles = prefs.loadProfiles();
-        
-        // PEMULIHAN LOG: Memulihkan teks log murni secara instan dan aman di semua versi compiler SDK
-        String savedLogs = prefs.loadLogs();
-        if (!savedLogs.isEmpty()) {
-            logBuilder = new SpannableStringBuilder(savedLogs);
-            logText.setText(logBuilder);
-            logText.setPadding(0, 0, 0, 0);
-            logText.setGravity(android.view.Gravity.START);
-        }
-
-        // Sinkronisasi status deteksi service yang sedang berjalan
-        if (MonitorService.isServiceRunning) {
-            isRunning = true;
-            setStatus("RUNNING", "#4ADE80");
-            showProfileList(true);
-        } else {
-            isRunning = false;
-            setStatus("STOPPED", "#7070A0");
-            showProfileList(false);
-        }
-
         updateStats();
-        
         IntentFilter filter = new IntentFilter();
         filter.addAction(MonitorService.ACTION_LOG);
         filter.addAction(MonitorService.ACTION_RESTART_COUNT);
@@ -143,7 +120,6 @@ public class DashboardFragment extends Fragment {
         isRunning = true;
         restartCount = 0;
         logBuilder.clear();
-        prefs.clearLogs();
         logText.setPadding(0, 0, 0, 0);
         logText.setGravity(android.view.Gravity.START);
 
@@ -154,6 +130,7 @@ public class DashboardFragment extends Fragment {
         showProfileList(true);
         updateStats();
 
+        // Launch semua profil satu per satu dengan delay
         new Thread(() -> {
             int jedaProfil = prefs.getJedaProfil() * 1000;
             for (int i = 0; i < profiles.size(); i++) {
@@ -162,27 +139,29 @@ public class DashboardFragment extends Fragment {
                     try { Thread.sleep(jedaProfil); } catch (InterruptedException ignored) {}
                 }
                 p.status = "starting";
-                
+                final int idx = i;
                 new Handler(Looper.getMainLooper()).post(() -> {
                     appendLog("Membuka " + p.packageName + "...", "default");
                 });
 
+                // Inject cookie (otomatis force-stop dulu sebelum inject)
                 if (!p.cookie.isEmpty()) {
                     new Handler(Looper.getMainLooper()).post(() ->
                         appendLog("Injecting cookie: " + p.packageName + "...", "default"));
-                    
                     boolean cookieOk = RobloxHelper.injectCookie(p.packageName, p.cookie);
                     final boolean fCookieOk = cookieOk;
+                    final String errorMsg = RootCookieInjector.lastError;
                     new Handler(Looper.getMainLooper()).post(() -> {
                         if (fCookieOk) {
                             appendLog("✓ Cookie injected: " + p.packageName, "green");
                         } else {
-                            appendLog("✗ Cookie gagal (cek akses root): " + p.packageName, "red");
+                            appendLog("✗ Cookie gagal: " + errorMsg, "red");
                         }
                     });
                     try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
                 }
 
+                // Launch
                 String link = !p.link.isEmpty() ? p.link : prefs.getDefaultLink();
                 boolean ok = RobloxHelper.launchRoblox(requireContext(), p.packageName, link);
                 p.status = ok ? "running" : "error";
@@ -198,6 +177,7 @@ public class DashboardFragment extends Fragment {
                 });
             }
 
+            // Simpan status dan mulai service monitor
             prefs.saveProfiles(profiles);
             new Handler(Looper.getMainLooper()).post(() -> {
                 setStatus("RUNNING", "#4ADE80");
@@ -210,8 +190,10 @@ public class DashboardFragment extends Fragment {
         if (!isRunning) return;
         isRunning = false;
 
+        // Stop service
         requireContext().stopService(new Intent(requireContext(), MonitorService.class));
 
+        // Reset semua status profil
         for (ProfileModel p : profiles) p.status = "idle";
         prefs.saveProfiles(profiles);
 
@@ -249,7 +231,6 @@ public class DashboardFragment extends Fragment {
     }
 
     private void updateProfileList() {
-        if (getContext() == null) return;
         profileListContainer.removeAllViews();
         for (ProfileModel p : profiles) {
             String dotColor = "running".equals(p.status) ? "#4ADE80"
@@ -293,9 +274,11 @@ public class DashboardFragment extends Fragment {
             int startLen = logBuilder.length();
             logBuilder.append(fullLine);
 
+            // Time color
             logBuilder.setSpan(new ForegroundColorSpan(Color.parseColor("#7070A0")),
                 startLen, startLen + time.length() + 2, 0);
 
+            // Message color
             int msgColor;
             switch (type) {
                 case "green": msgColor = Color.parseColor("#4ADE80"); break;
@@ -308,10 +291,6 @@ public class DashboardFragment extends Fragment {
                 startLen + time.length() + 2, logBuilder.length(), 0);
 
             logText.setText(logBuilder);
-            
-            // PERBAIKAN STABILITAS BUILD: Gunakan format konversi String dasar murni agar lolos sensor Gradle
-            prefs.saveLogs(logBuilder.toString());
-            
             logScroll.post(() -> logScroll.fullScroll(View.FOCUS_DOWN));
         });
     }
